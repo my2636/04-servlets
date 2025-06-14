@@ -5,7 +5,8 @@ import ru.netology.model.Post;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicLong;
 
 /*
  Задача
@@ -19,29 +20,35 @@ import java.util.concurrent.CopyOnWriteArrayList;
 Если от клиента приходит пост с id !=0, значит, это сохранение (обновление) существующего поста. Вы ищете его в списке
 по id и обновляете. Продумайте самостоятельно, что вы будете делать, если поста с таким id не оказалось: здесь могут быть
 разные стратегии.
+
+
+
+в PostController не реализованы методы getById и removeById
+хранение данных в репозитории реализовано неверно. Во-первых, при сохранении поста вы должны потокобезопасно гарантировать ему уникальность идентификатора.
+Для потокобезопасного генерирования нового id вам надо использовать atomic объект, например, AtomicLong.
+Во-вторых, List для хранения данных в репозитории в данной задача работает неэффективно, вам надо уметь быстро по id получать и удалять пост.
+Для этого надо использовать потокобезопасную реализацию Map. Используйте ConcurrentHashMap для этого.
 */
 
 public class PostRepository {
-    private int postCount = 0;
-    List<Post> postList = new CopyOnWriteArrayList<>();
+    AtomicLong postCount = new AtomicLong(0);
+    ConcurrentHashMap<Long, Post> postMap = new ConcurrentHashMap<>();
 
     public List<Post> all() {
-        return postList;
+        return (List<Post>) postMap.values();
     }
 
     public Optional<Post> getById(long id) {
 
-        return postList.stream().filter(post -> post.getId() == id).findFirst();
+
+        return Optional.of(postMap.get(id));
     }
 
     public Post save(Post post) {
         try {
             if (post.getId() == 0) {
-                postCount++;
-                post.setId(postCount);
-                postList.add(post);
-                return post;
-            } else if (post.getId() != 0) {
+                return postMap.put(postCount.incrementAndGet(), post);
+            } else {
                 Optional<Post> optionalPost = getById(post.getId());
                 if (optionalPost.isPresent()) {
                     Post post1 = optionalPost.get();
@@ -50,7 +57,6 @@ public class PostRepository {
                 } else {
                     throw new NotFoundException("Post with ID " + post.getId() + " not found");
                 }
-
             }
         } catch (NotFoundException nfe) {
             System.err.println("An unexpected error occurred: " + nfe.getMessage());
@@ -62,14 +68,14 @@ public class PostRepository {
 
     public void removeById(long id) {
         try {
-            if (!getById(id).isPresent()) {
+            if (getById(id).isEmpty()) {
                 throw new NotFoundException("Post with ID " + id + " not found");
             }
-            postList.remove(id);
+            postMap.remove(id);
         } catch (NotFoundException nfe) {
             System.err.println("An unexpected error occurred: " + nfe.getMessage());
         } catch (Exception e) {
-            System.out.println(e.getMessage());
+            System.err.println(e.getMessage());
         }
     }
 }
