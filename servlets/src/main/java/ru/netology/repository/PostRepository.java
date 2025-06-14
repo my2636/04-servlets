@@ -1,5 +1,6 @@
 package ru.netology.repository;
 
+import ru.netology.exception.NotFoundException;
 import ru.netology.model.Post;
 
 import java.util.ArrayList;
@@ -23,41 +24,54 @@ import java.util.concurrent.CopyOnWriteArrayList;
 */
 
 public class PostRepository {
-  private int postCount = 0;
-  List<Post> postList = new CopyOnWriteArrayList();
+    private int postCount = 0;
+    List<Post> postList = new CopyOnWriteArrayList();
 
-  public List<Post> all() {
-    return postList;
-  }
-
-  public Optional<Post> getById(long id) {
-    return postList.stream().findFirst();
-  }
-
-  public Post save(Post post) {
-    try {
-      Optional<Post> optionalPost = getById(post.getId());
-      if (optionalPost.isPresent()) {
-        Post post1 = optionalPost.get();
-        post1.setContent(post.getContent());
-        return post1;
-      } else {
-        postCount++;
-        post.setId(postCount);
-        postList.add(post);
-        return post;
-      }
-    } catch (Exception e) {
-      System.out.println(e.getMessage());
-      return null;
+    public List<Post> all() {
+        return postList;
     }
-  }
 
-  public void removeById(long id) {
-    try {
-      postList.remove(id);
-    } catch (Exception e) {
-      System.out.println(e.getMessage());
+    public Optional<Post> getById(long id) {
+
+        return postList.stream().filter(post -> post.getId() == id).findFirst();
     }
-  }
+
+    public Post save(Post post) {
+        try {
+            if (post.getId() == 0) {
+                postCount++;
+                post.setId(postCount);
+                postList.add(post);
+                return post;
+            } else if (post.getId() != 0) {
+                Optional<Post> optionalPost = getById(post.getId());
+                if (optionalPost.isPresent()) {
+                    Post post1 = optionalPost.get();
+                    post1.setContent(post.getContent());
+                    return post1;
+                } else {
+                    throw new NotFoundException("Post with ID " + post.getId() + " not found");
+                }
+
+            }
+        } catch (NotFoundException nfe) {
+            System.err.println("An unexpected error occurred: " + nfe.getMessage());
+        } catch (Exception e) {
+            System.err.println(e.getMessage());
+        }
+        return null;
+    }
+
+    public void removeById(long id) {
+        try {
+            if (!getById(id).isPresent()) {
+                throw new NotFoundException("Post with ID " + id + " not found");
+            }
+            postList.remove(id);
+        } catch (NotFoundException nfe) {
+            System.err.println("An unexpected error occurred: " + nfe.getMessage());
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+        }
+    }
 }
