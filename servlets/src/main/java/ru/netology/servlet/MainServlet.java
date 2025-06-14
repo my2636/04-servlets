@@ -59,7 +59,7 @@ public class MainServlet extends HttpServlet {
         }
         if (path.matches(POST_ID_PATH)) {
             // easy way
-            final var id = Long.parseLong(path.substring(path.lastIndexOf("/")));
+            final var id = Long.parseLong(path.substring(path.lastIndexOf("/")).replace("/", ""));
             controller.getById(id, resp);
         }
     }
@@ -73,7 +73,7 @@ public class MainServlet extends HttpServlet {
     final protected void doDelete(String path, HttpServletResponse resp) {
         if (path.matches(POST_ID_PATH)) {
             // easy way
-            final var id = Long.parseLong(path.substring(path.lastIndexOf("/")));
+            final var id = Long.parseLong(path.substring(path.lastIndexOf("/")).replace("/", ""));
             controller.removeById(id, resp);
         }
     }
