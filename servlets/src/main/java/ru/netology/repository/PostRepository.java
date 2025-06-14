@@ -3,8 +3,6 @@ package ru.netology.repository;
 import ru.netology.exception.NotFoundException;
 import ru.netology.model.Post;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -25,7 +23,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 public class PostRepository {
     private int postCount = 0;
-    List<Post> postList = new CopyOnWriteArrayList();
+    List<Post> postList = new CopyOnWriteArrayList<>();
 
     public List<Post> all() {
         return postList;
